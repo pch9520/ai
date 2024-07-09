@@ -4,7 +4,6 @@ import logging
 import os
 from typing import Tuple
 
-import numpy as np
 from tensorboardX import SummaryWriter
 import torch
 import torch.optim as optim
@@ -15,10 +14,15 @@ from torchvision.utils import save_image
 from dataset.pascal_voc.dataset import PascalVocDataset
 from models.unet import UNet
 from train.image_segment.loss import get_loss
-from utils.utils import weight_init, format_logger, init_seed
+from utils.utils import weight_init, format_logger, init_seed, convert_onehot_to_mask
 
 logger = logging.getLogger("train_image_segment")
 writer = SummaryWriter("./log/tensorboard")
+
+un_norm = transforms.Compose([
+    transforms.Normalize(mean=[0., 0., 0.], std=[1/0.229, 1/0.224, 1/0.225]),
+    transforms.Normalize(mean=[-0.485, -0.456, -0.406], std=[1., 1., 1.])
+])
 
 
 def get_dataloader(data_path: str) -> Tuple[DataLoader, DataLoader]:
@@ -52,7 +56,7 @@ def train():
     data_loader = DataLoader(PascalVocDataset(data_path), batch_size=16, shuffle=False)
     model = UNet().to(device)
     writer.add_graph(model, torch.randn(1, 3, 256, 256).to(device))
-    weight_init(model)
+    model.apply(weight_init)
     opt = optim.Adam(model.parameters(), lr=1e-5)
     n_epoch = 20
     cnt = 0
@@ -73,9 +77,11 @@ def train():
                 writer.add_scalar("tran_loss_not_epoch", train_loss, cnt)
                 cnt += 1
             if i % 50 == 0:
-                i_img = image[0]
+                i_img = un_norm(image[0])
                 l_img = label_image[0]
+                l_img = convert_onehot_to_mask(l_img)
                 o_img = output_image[0]
+                o_img = convert_onehot_to_mask(o_img)
                 img = torch.stack([i_img, l_img, o_img], dim=0)
                 save_image(img, os.path.join(output_image_dir, f"{epoch}_{i}.png"))
         avg_train_loss = total_loss / len(data_loader)

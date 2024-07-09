@@ -16,6 +16,14 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
+transform_with_norm = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+
+# TODO: add data augmentation module
+
 
 class PascalVocDataset(Dataset):
     def __init__(self, path: str) -> None:
@@ -36,8 +44,7 @@ class PascalVocDataset(Dataset):
         segment_image = torch.squeeze(segment_image.long(), dim=0)
         segment_image = torch.where(segment_image == 255, 0, segment_image)
         segment_image = F.one_hot(segment_image, num_classes=21).permute(2, 0, 1)
-        segment_image = segment_image.float()
-        return transform(image), segment_image
+        return transform_with_norm(image), segment_image
 
 
 if __name__ == '__main__':

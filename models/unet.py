@@ -45,7 +45,7 @@ class UNet(nn.Module):
         x = self.up_2(x, x3)
         x = self.up_3(x, x2)
         x = self.up_4(x, x1)
-        return self.softmax(self.output(x))
+        return self.output(x)
 
 
 if __name__ == '__main__':
