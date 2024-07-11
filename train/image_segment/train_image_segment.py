@@ -47,6 +47,16 @@ def get_validate_loss(model: UNet, val_loader: DataLoader, device: torch.device)
     return total_loss / len(val_loader)
 
 
+def get_newest_model(model: UNet, output_models_dir: str) -> str:
+    file_path_list = [file_path for file_path in os.listdir(output_models_dir) if file_path.endswith(".pth")]
+    if len(file_path_list) == 0:
+        return ""
+    file_path_list.sort(key=lambda x: os.path.getmtime(os.path.join(output_models_dir, x)))
+    logger.info(f"load model from {os.path.join(output_models_dir, file_path_list[-1])}")
+    model.load_state_dict(torch.load(os.path.join(output_models_dir, file_path_list[-1])))
+    return file_path_list[-1].split(".")[0].split("_")[-1]
+
+
 def train():
     device = torch.device("mps")
     output_models_dir = "/Users/panchuheng/models/pascal_voc"
@@ -56,12 +66,18 @@ def train():
     data_loader = DataLoader(PascalVocDataset(data_path), batch_size=16, shuffle=False)
     model = UNet().to(device)
     writer.add_graph(model, torch.randn(1, 3, 256, 256).to(device))
-    model.apply(weight_init)
+    newest_version = get_newest_model(model, output_models_dir)
+    if not newest_version:
+        model.apply(weight_init)
+        newest_version = -1
+    else:
+        newest_version = int(newest_version)
     opt = optim.Adam(model.parameters(), lr=1e-5)
     n_epoch = 20
     cnt = 0
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(opt, 'min', patience=2)
     for epoch in range(n_epoch):
+        epoch += (newest_version + 1)
         model.train()
         total_loss = 0
         for i, (image, label_image) in enumerate(train_loader):
@@ -74,7 +90,7 @@ def train():
             opt.step()
             if i % 5 == 0:
                 logger.info(f"epoch: {epoch}, iter: {i}, train_loss: {train_loss}")
-                writer.add_scalar("tran_loss_not_epoch", train_loss, cnt)
+                writer.add_scalar("train_loss_not_epoch", train_loss, cnt)
                 cnt += 1
             if i % 50 == 0:
                 i_img = un_norm(image[0])
