@@ -17,6 +17,7 @@ from train.image_segment.loss import get_loss
 from utils.utils import weight_init, format_logger, init_seed, convert_onehot_to_mask
 
 logger = logging.getLogger("train_image_segment")
+# TODO: add append tensorboard function
 writer = SummaryWriter("./log/tensorboard")
 
 un_norm = transforms.Compose([
@@ -72,7 +73,7 @@ def train():
         newest_version = -1
     else:
         newest_version = int(newest_version)
-    opt = optim.Adam(model.parameters(), lr=1e-5)
+    opt = optim.Adam(model.parameters(), lr=5e-6)
     n_epoch = 20
     cnt = 0
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(opt, 'min', patience=2)
