@@ -75,7 +75,7 @@ def train():
         newest_version = int(newest_version)
     opt = optim.Adam(model.parameters(), lr=5e-6)
     n_epoch = 20
-    cnt = 0
+    cnt = (len(train_loader) // 5 + 1) * (newest_version + 1)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(opt, 'min', patience=2)
     for epoch in range(n_epoch):
         epoch += (newest_version + 1)
