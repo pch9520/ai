@@ -2,38 +2,26 @@
 # -*- coding: utf-8 -*-
 import logging
 import os
-from typing import Tuple
 
 from tensorboardX import SummaryWriter
 import torch
 import torch.optim as optim
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import save_image
 
-from dataset.pascal_voc.dataset import PascalVocDataset
+from dataset.pascal_voc.dataset import get_dataloader
 from models.unet import UNet
 from train.image_segment.loss import get_loss
 from utils.utils import weight_init, format_logger, init_seed, convert_onehot_to_mask
 
 logger = logging.getLogger("train_image_segment")
-# TODO: add append tensorboard function
 writer = SummaryWriter("./log/tensorboard")
 
 un_norm = transforms.Compose([
     transforms.Normalize(mean=[0., 0., 0.], std=[1/0.229, 1/0.224, 1/0.225]),
     transforms.Normalize(mean=[-0.485, -0.456, -0.406], std=[1., 1., 1.])
 ])
-
-
-def get_dataloader(data_path: str) -> Tuple[DataLoader, DataLoader]:
-    dataset = PascalVocDataset(data_path)
-    train_size = int(len(dataset) * 0.8)
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
-    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=False)
-    val_dataset = DataLoader(val_dataset, batch_size=16, shuffle=False)
-    return train_loader, val_dataset
 
 
 def get_validate_loss(model: UNet, val_loader: DataLoader, device: torch.device) -> float:
@@ -59,12 +47,14 @@ def get_newest_model(model: UNet, output_models_dir: str) -> str:
 
 
 def train():
+    # TODO: amend getting dir parameter method
+    import getpass
+    user = getpass.getuser()
     device = torch.device("mps")
-    output_models_dir = "/Users/panchuheng/models/pascal_voc"
-    output_image_dir = "/Users/panchuheng/models/pascal_voc/test_image"
-    data_path = "/Users/panchuheng/datasets/PASCAL_VOC/VOCdevkit/VOC2012"
+    output_models_dir = f"/Users/{user}/models/pascal_voc"
+    output_image_dir = f"/Users/{user}/models/pascal_voc/test_image"
+    data_path = f"/Users/{user}/datasets/PASCAL_VOC/VOCdevkit/VOC2012"
     train_loader, val_loader = get_dataloader(data_path)
-    data_loader = DataLoader(PascalVocDataset(data_path), batch_size=16, shuffle=False)
     model = UNet().to(device)
     writer.add_graph(model, torch.randn(1, 3, 256, 256).to(device))
     newest_version = get_newest_model(model, output_models_dir)
@@ -101,7 +91,7 @@ def train():
                 o_img = convert_onehot_to_mask(o_img)
                 img = torch.stack([i_img, l_img, o_img], dim=0)
                 save_image(img, os.path.join(output_image_dir, f"{epoch}_{i}.png"))
-        avg_train_loss = total_loss / len(data_loader)
+        avg_train_loss = total_loss / len(train_loader)
         avg_val_loss = get_validate_loss(model, val_loader, device)
         logger.info(f"epoch: {epoch}, avg_train_loss: {avg_train_loss}, avg_val_loss: {avg_val_loss}")
         writer.add_scalars("train_loss_epoch", {"train": avg_train_loss, "val": avg_val_loss}, epoch)
