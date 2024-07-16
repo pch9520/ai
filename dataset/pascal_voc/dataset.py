@@ -7,7 +7,6 @@ from typing import Tuple, Union
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset, random_split
-from torchvision import transforms
 from torchvision.transforms import v2
 
 from utils.utils import pad_and_resize_img
