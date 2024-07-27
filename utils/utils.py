@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import gzip
 import logging
+import pickle
 import random
 from typing import Tuple, List
 
@@ -11,6 +13,19 @@ import torch
 import torch.nn as nn
 
 import train.image_segment.config as config
+
+
+def gload(filename):
+    file = gzip.GzipFile(filename, 'rb')
+    res = pickle.load(file, -1)
+    file.close()
+    return res
+
+
+def gdump(obj, filename):
+    file = gzip.GzipFile(filename, 'wb')
+    pickle.dump(obj, file, -1)
+    file.close()
 
 
 def get_torch_device():
