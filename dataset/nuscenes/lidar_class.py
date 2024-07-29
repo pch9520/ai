@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from typing import Tuple
 
 import numpy as np
 
@@ -12,9 +13,8 @@ class Lidar:
         self.file_path = file_path
         self.channel = channel
         self.points = None
-        if self.exist:
-            self.points = self.get_lidar_from_file(file_path)
+        self.label = None
 
-    def get_lidar_from_file(self, file_path):
-        scan = np.fromfile(file_path, dtype=np.float32)
+    def get_lidar_from_file(self) -> Tuple[np.ndarray, np.ndarray]:
+        scan = np.fromfile(self.file_path, dtype=np.float32)
         return scan.reshape((-1, 5))[:, :4]

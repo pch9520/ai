@@ -19,8 +19,6 @@ class SingleCameraImage:
         self.timestamp = timestamp
         self.is_key_frame = is_key_frame
         self.image = None
-        if self.exist:
-            self.image = self.get_image_from_file(file_path)
 
     def get_image_from_file(self, file_path: str) -> Image:
         return Image.open(file_path)

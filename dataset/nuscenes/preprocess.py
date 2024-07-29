@@ -79,4 +79,6 @@ if __name__ == "__main__":
     user = getpass.getuser()
     dataroot = f"/Users/{user}/datasets/nuscenes"
     utils.format_logger(logger, "./log/nuscenes_preprocess.log")
-    main("v1.0-trainval")
+    # version = "v1.0-trainval"
+    version = "v1.0-mini"
+    main(version)
