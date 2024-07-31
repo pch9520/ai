@@ -34,7 +34,9 @@ def get_lidar_with_token(nusc: NuScenes, token: str) -> Lidar:
     lidar_data = nusc.get("sample_data", token)
     file_path = os.path.join(dataroot, lidar_data["filename"])
     channel = lidar_data["channel"]
-    return Lidar(file_path=file_path, channel=channel)
+    lidar_seg_path = os.path.join(dataroot, "lidarseg", version, f"{token}_lidarseg.bin")
+    panoptic_path = os.path.join(dataroot, "panoptic", version, f"{token}_panoptic.npz")
+    return Lidar(file_path=file_path, channel=channel, lidar_seg_path=lidar_seg_path, panoptic_path=panoptic_path)
 
 
 def get_frame_data_with_token(nusc: NuScenes, token: str) -> Frame:
